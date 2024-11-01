@@ -1,5 +1,5 @@
 # * import libraries
-import os, shutil
+import os
 from decouple import config
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
@@ -16,11 +16,16 @@ class AgentCRUD():
 
         self.llm = ChatOpenAI(model=model, temperature=temperature)
         self.embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+        self.access = {
+            'admin': False,
+            'accountant': False,
+            'sales': False
+        }
 
 
-    def loadDoc(self, path: str, access: str)->list:
+    def loadDoc(self, path: str, access: list)->list:
         '''
-        Charger les documents
+        Load the documents
 
         :param path: path of the document (PDF format)
         :param access: access of the document
@@ -30,11 +35,29 @@ class AgentCRUD():
         loader = PyPDFLoader(path)
         pages = loader.load_and_split()
 
+        # update access
+        self.addAccess(access)
+
         for page in pages:
             page.page_content = page.page_content.replace('\n', ' ')
-            page.metadata['access'] = access
+            # add access in metadata of Document
+            for key, value in self.access.items():
+                page.metadata[key] = value
 
         return pages
+
+
+    def addAccess(self, access:list):
+        """
+        Change access
+
+        :param access: list of access
+        :return: void
+        """
+
+        for key in access:
+            if key in self.access:
+                self.access[key] = True
 
 
     def calculateChunkIds(self, chunks):
@@ -96,25 +119,26 @@ class AgentCRUD():
             print("✅ No new documents to add")
 
 
-    def similarityFilter(self, query:str, filter:str)->list:
+    def similarityFilter(self, query:str, access:str)->list:
         '''
         Return docs with scoring
 
         :param query: query to evaluate
-        :param filter: filter
+        :param access: access to filter
         :return: list of document
         '''
         db = Chroma(persist_directory="chroma", embedding_function=self.embeddings)
-        results = db.similarity_search_with_relevance_scores(query, filter={"access": {"$in": [filter]}})
+        results = db.similarity_search_with_relevance_scores(query, filter={access: {"$eq": True}})
+
         return results
 
 
-    def chat(self, docs: list, query: str)->str:
+    def chat(self, docs: list, messages: list)->str:
         '''
         get response of LLM
 
-        :param docs: list of docs similary
-        :param query: user request
+        :param docs: list of docs similar
+        :param messages: list of message in chat
         :return: LLM response
         '''
 
@@ -125,22 +149,18 @@ class AgentCRUD():
                     "Tu es un assistant d'analyse de document. A partir des données des documents fournis tu dois répondre aux questions posés.\n"
                     "Les documents fournis : {docs} \n"
                     "Si il y a aucun document fournis répond : Désolé je n'ai rien trouvé à propos de ce sujet..."
-                ),
-                ("human", "{query}")
+                )
             ]
         )
+
+        for message in messages:
+            prompt.append((message['role'], message['content']))
 
         chain = prompt | self.llm
         response = chain.invoke(
             {
-                "docs": docs,
-                "query": query
+                "docs": docs
             }
         )
 
         return response.content
-
-
-test = AgentCRUD().similarityFilter('Facture 100100', 'admin/comptable')
-
-print(test)

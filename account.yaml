@@ -1,0 +1,33 @@
+credentials:
+  usernames:
+    jsmith:
+      email: joe@company.co
+      first_name: Joe
+      last_name: Smith
+      logged_in: False
+      password: abc # To be replaced with hashed password
+      roles:
+        - admin
+    ebriggs:
+      email: emma@company.co
+      first_name: Emma
+      last_name: Briggs
+      logged_in: False
+      password: def
+      roles:
+        - accountant
+    jwilson:
+      email: johanna@company.co
+      first_name: Johanna
+      last_name: Wilson
+      logged_in: False
+      password: ghi
+      roles:
+        - sales
+cookie:
+  expiry_days: 30
+  key: random_signature_key
+  name: random_cookie_name
+preauthorized:
+  emails:
+  - admin@company.co

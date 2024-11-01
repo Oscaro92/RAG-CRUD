@@ -6,7 +6,7 @@ from agent import AgentCRUD
 
 def addAllFiles(path:str):
     '''
-    Recursively retrieve all PDF files from a parent folder
+    Add all PDF files from a parent folder
 
     :param path: parent path
     :return: list of dict (PDF file info)
@@ -17,7 +17,7 @@ def addAllFiles(path:str):
     files_pdf = []
 
     for file in os.listdir(path):
-        tempo_files = agent.loadDoc(f'{path}/{file}', 'admin/comptable')
+        tempo_files = agent.loadDoc(f'{path}/{file}', ['admin', 'sales'])
         tempo_list = files_pdf + tempo_files
         files_pdf.clear()
         files_pdf = tempo_list
@@ -26,4 +26,4 @@ def addAllFiles(path:str):
 
 
 if __name__ == '__main__':
-    addAllFiles('drive/Factures')
+    addAllFiles('drive/Propal')
